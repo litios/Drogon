@@ -12,7 +12,6 @@ paths:
     post:
       summary: Token login
       description: Token login
-      operationId: routes.users.login
       responses:
         200:
           description: Token
@@ -24,10 +23,34 @@ paths:
                   token:
                     type: string
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
               properties:
-                user_data:
+                master_passwd:
+                  type: string
+                master_number:
+                  type: integer
+                username:
+                  type: string
+    put:
+      summary: Register
+      description: register
+      responses:
+        200:
+          description: Ok
+          content:
+            text/plain:
+              schema:
+                type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
                   type: string

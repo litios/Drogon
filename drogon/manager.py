@@ -1,4 +1,5 @@
 from crypto_tool import Encryptor
+from pathlib import Path
 
 class Manager:
     def __init__(self, db_route, master_passwd, salt):
