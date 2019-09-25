@@ -22,6 +22,3 @@ class Encryptor:
 
     def decrypt_passwd(self, passwd):
         return self.tool.decrypt(passwd.encode())
-
-    def get_timestamp(self, passwd):
-        return self.tool.extract_timestamp(passwd)
