@@ -2,6 +2,8 @@ import sys
 import random
 import secrets
 import datetime
+import jwt
+import os
 
 sys.path.insert(1, '../')
 
@@ -14,37 +16,21 @@ from flask.views import MethodView
 from pathlib import Path
 from pymongo import MongoClient
 
-def check_auth(token, username):
-    db_client = MongoClient('mongodb://localhost:27017/drogon')
-    passwd, salt = token.split('-')
-    encryptor = Encryptor(passwd.encode(), str(salt).encode())
-
-    db = db_client['drogon']
-    users = db['users']
-
-    user_data = users.find_one({'username': username})
-
-    decrypted = encryptor.decrypt_passwd(user_data['token_user_data']).decode()
-
-    if username in decrypted:
-        data = decrypted.split('-')
-        return data[1], data[2]
-    else:
-        return False
-
 class LoginView(MethodView):
     db_path = '../../drogon/{username}.dr'
     db_client = MongoClient('mongodb://localhost:27017/drogon')
 
     def put(self):
         user_data = request.json
-        if Path(self.db_path.format(username = user_data['username'])).is_file():
-            return 'Username already in use', 401
+        db = self.db_client['drogon']
+        users = db['users']
+
+        if Path(self.db_path.format(username = user_data['username'])).is_file() and users.find_one({'username': user_data['username']}):
+            return 'Username already in use', 403
         
         open(self.db_path.format(username = user_data['username']), 'w+').close()
 
-        db = self.db_client['drogon']
-        users = db['users']
+        
         users.insert_one({
             'username' : user_data['username'],
             'token_user_data': '',
@@ -58,19 +44,24 @@ class LoginView(MethodView):
         user_data = request.json
 
         if not Path(self.db_path.format(username = user_data['username'])).is_file():
-            return 'User doesn\'t exist', 401
+            return 'User doesn\'t exist', 400
         
         try:
             Manager(self.db_path.format(username = user_data['username']), user_data['master_passwd'].encode(), str(user_data['master_number']).encode())
         except InvalidToken:
             return 'Invalid credentials', 400
+        
+        user_encrypt_data = {
+            'username': user_data['username'],
+            'passwd': secrets.token_hex(256),
+            'salt': random.randint(1, 500000)
+        }
 
-        passwd = secrets.token_hex(256)
-        salt = random.randint(1, 500000)
+        # Just for the username to not travel in plain text
+        encoded_jwt = jwt.encode(user_encrypt_data, os.environ.get('jwt_encode_key'), algorithm='HS256')
 
-        encryptor = Encryptor(passwd.encode(), str(salt).encode())
-        token = passwd + '-' + str(salt)
-        encrypted_to_bbdd = encryptor.encrypt_passwd(user_data['username'] + '-' + user_data['master_passwd'] + '-' + str(user_data['master_number'])).decode()
+        encryptor = Encryptor(user_encrypt_data['passwd'].encode(), str(user_encrypt_data['salt']).encode())
+        encrypted_to_bbdd = encryptor.encrypt_passwd(user_data['master_passwd'] + '-' + str(user_data['master_number'])).decode()
 
         db = self.db_client['drogon']
         users = db['users']
@@ -79,5 +70,5 @@ class LoginView(MethodView):
             'token_datetime': datetime.datetime.utcnow()
         }})
 
-        return token
+        return encoded_jwt
         

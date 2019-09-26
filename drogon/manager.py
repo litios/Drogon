@@ -1,5 +1,7 @@
 from crypto_tool import Encryptor
 from pathlib import Path
+import random
+import string
 
 class Manager:
     def __init__(self, db_route, master_passwd, salt):
@@ -10,8 +12,15 @@ class Manager:
             self.passwds = {}
             lines = db.readlines()
             for line in lines:
-                name, passwd = line.split()
-                self.passwds[self.encryption_tool.decrypt_passwd(name).decode()] = passwd
+                encrypted_name, encrypted_passwd = line.split()
+                name = self.encryption_tool.decrypt_passwd(encrypted_name).decode()
+
+                if name != '':
+                    self.passwds[name] = encrypted_passwd
+            
+            if len(lines) == 0:
+                letters = string.ascii_letters
+                self.store_passwd('', ''.join(random.choice(letters) for i in range(20)))
 
     def check_if_exists(self, name):
         return name in self.passwds
@@ -25,7 +34,12 @@ class Manager:
         self.passwds[name] = encrypted_passwd.decode()
 
     def get_passwd(self, name):
-        return self.encryption_tool.decrypt_passwd(self.passwds[name])
+        if name != '':
+            return self.encryption_tool.decrypt_passwd(self.passwds[name])
+        else:
+            return None
 
     def list_passwd(self):
-        return self.passwds
+        return self.passwds.keys()
+    
+

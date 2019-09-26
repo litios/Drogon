@@ -54,3 +54,62 @@ paths:
               properties:
                 username:
                   type: string
+  
+  /passwords:
+    get:
+      summary: Get list of password identifiers
+      description: Get list of all password identifiers
+      responses:
+        200:
+          description: Ok
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  type: string
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+      
+      security:
+        - bearer_auth: []
+    post:
+      summary: Get password
+      description: Get the password given an identifier
+      responses:
+        200:
+          $ref: '#/components/responses/Valid'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                identifier:
+                  type: string
+                  example: 'Google'
+      
+      security:
+        - bearer_auth: []
+
+components:
+  securitySchemes:
+    bearer_auth:
+      type: http
+      scheme: bearer
+      x-bearerInfoFunc: auth.check_auth
+      bearerFormat: JWT
+  responses:
+    UnauthorizedError:
+      description: Access token is invalid or not present
+    Valid:
+      description: 'OK'
+      content:
+            text/plain:
+              schema:
+                type: string
+                example: 'OK'

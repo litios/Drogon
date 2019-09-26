@@ -4,6 +4,7 @@ from getpass import getpass
 from cryptography.fernet import InvalidToken
 import sys
 import os
+import string
 
 class bcolors:
     HEADER = '\033[95m'
@@ -21,20 +22,27 @@ if __name__ == '__main__':
     print(' ----------------------------------------------------------------------------')
     print('\n\n\t            ..                                              \n\t        .-".\'                      .--.            _..._    \n\t      .\' .\'                     .\'    \       .-""  __ ""-. \n\t     /  /                     .\'       : --..:__.-""  ""-. \n\t    :  :                     /         ;.d$$    sbp_.-""-:_:\n\t    ;  :                    : ._       :P .-.   ,"TP        \n\t    :   \                    \  T--...-; : d$b  :d$b        \n\t     \   `.                   \  `..\'    ; $ $  ;$ $        \n\t      `.   "-.                 ).        : T$P  :T$P        \n\t        \..---^..             /           `-\'    `._`._     \n\t       .\'        "-.       .-"                     T$$$b    \n\t      /             "-._.-"               ._        \'^\' ;   \n\t     :                                    \.`.         /    \n\t     ;                                -.   \`."-._.-\'-\'     \n\t    :                                 .\'\   \ \ \ \         \n\t    ;  ;                             /:  \   \ \ . ;        \n\t   :   :                            ,  ;  `.  `.;  :        \n\t   ;    \        ;                     ;    "-._:  ;        \n\t  :      `.      :                     :         \/         \n\t  ;       /"-.    ;                    :                    \n\t :       /    "-. :                  : ;                    \n\t :     .\'        T-;                 ; ;        \n\t ;    :          ; ;                /  :        \n\t ;    ;          : :              .\'    ;       \n\t:    :            ;:         _..-"\     :       \n\t:     \           : ;       /      \     ;      \n\t;    . \'.         \'-;      /        ;    :      \n\t;  \  ; :           :     :         :    \'-.      \n\t\'.._L.:-\'           :     ;          ;    . `. \n\t                     ;    :          :  \  ; :  \n\t                     :    \'-..       \'.._L.:-\'  \n\t                      ;     , `.                \n\t                      :   \  ; :                \n\t                      \'..__L.:-\'\'')
     
-    db_path = 'vault.dr'
+    username = input(bcolors.WARNING + bcolors.BOLD + ' Enter your username: ' + bcolors.ENDC)
+    db_path = '{username}.dr'.format(username=username)
+    registered = False
+
     if not Path(db_path).is_file():
         new = input(bcolors.FAIL + bcolors.BOLD + '\n The vault hasn\'t been created. Do you want to create it? (y/n) '+ bcolors.ENDC)
         if new != 'y':
             print('Bye')
             sys.exit(0)
-        open(db_path, 'w+').close()
-        print(bcolors.OKGREEN + bcolors.BOLD + ' File created successfully.' + bcolors.ENDC)
+
+        registered = True
 
     passwd = getpass(bcolors.WARNING + bcolors.BOLD + ' Enter your master passwd: ' + bcolors.ENDC)
     value = int(getpass(bcolors.WARNING + bcolors.BOLD + ' Enter your secret number: ' + bcolors.ENDC))
 
     master_passwd = passwd[:(value % len(passwd))].encode()
     salt = passwd[(value % len(passwd)):].encode()
+
+    if registered:
+        open(db_path, 'w+').close()
+        print(bcolors.OKGREEN + bcolors.BOLD + ' File created successfully.' + bcolors.ENDC)
 
     try:
         manager = Manager(db_path, master_passwd, salt)
@@ -59,7 +67,7 @@ if __name__ == '__main__':
 
         elif option == 'r':
             name = input(bcolors.BOLD + ' Enter name of the password: ' + bcolors.ENDC)
-            if manager.check_if_exists(name):
+            if manager.check_if_exists(name) and name != '':
                 print(bcolors.BOLD + '\n ' + bcolors.UNDERLINE + manager.get_passwd(name).decode() + bcolors.ENDC)
             else:
                 print(bcolors.FAIL + bcolors.BOLD + ' That password\'s name doesn\'t exist' + bcolors.ENDC)
