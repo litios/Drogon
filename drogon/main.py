@@ -35,8 +35,8 @@ if __name__ == '__main__':
         registered = True
 
     passwd = getpass(bcolors.WARNING + bcolors.BOLD + ' Enter your master passwd: ' + bcolors.ENDC)
-    value = int(getpass(bcolors.WARNING + bcolors.BOLD + ' Enter your secret number: ' + bcolors.ENDC))
 
+    value = int(len(passwd) / 2)
     master_passwd = passwd[:(value % len(passwd))].encode()
     salt = passwd[(value % len(passwd)):].encode()
 

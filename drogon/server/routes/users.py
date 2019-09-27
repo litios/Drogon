@@ -46,22 +46,27 @@ class LoginView(MethodView):
         if not Path(self.db_path.format(username = user_data['username'])).is_file():
             return 'User doesn\'t exist', 400
         
+        passwd = user_data['master_passwd']
+        value = int(len(passwd) / 2)
+
+        master_passwd = passwd[:value].encode()
+        salt = passwd[value:].encode()
+
         try:
-            Manager(self.db_path.format(username = user_data['username']), user_data['master_passwd'].encode(), str(user_data['master_number']).encode())
+            Manager(self.db_path.format(username = user_data['username']), master_passwd, salt)
         except InvalidToken:
             return 'Invalid credentials', 400
         
         user_encrypt_data = {
             'username': user_data['username'],
-            'passwd': secrets.token_hex(256),
-            'salt': random.randint(1, 500000)
+            'passwd': secrets.token_hex(256)
         }
 
         # Just for the username to not travel in plain text
         encoded_jwt = jwt.encode(user_encrypt_data, os.environ.get('jwt_encode_key'), algorithm='HS256')
 
-        encryptor = Encryptor(user_encrypt_data['passwd'].encode(), str(user_encrypt_data['salt']).encode())
-        encrypted_to_bbdd = encryptor.encrypt_passwd(user_data['master_passwd'] + '-' + str(user_data['master_number'])).decode()
+        encryptor = Encryptor(user_encrypt_data['passwd'][:180].encode(), user_encrypt_data['passwd'][180:].encode())
+        encrypted_to_bbdd = encryptor.encrypt_passwd(user_data['master_passwd']).decode()
 
         db = self.db_client['drogon']
         users = db['users']
@@ -70,5 +75,5 @@ class LoginView(MethodView):
             'token_datetime': datetime.datetime.utcnow()
         }})
 
-        return encoded_jwt
+        return {'token': encoded_jwt.decode()}
         

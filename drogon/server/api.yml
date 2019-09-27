@@ -31,8 +31,6 @@ paths:
               properties:
                 master_passwd:
                   type: string
-                master_number:
-                  type: integer
                 username:
                   type: string
     put:
@@ -92,6 +90,32 @@ paths:
                 identifier:
                   type: string
                   example: 'Google'
+      
+      security:
+        - bearer_auth: []
+
+    put:
+      summary: Store password
+      description: Store a password with the identifier
+      responses:
+        200:
+          $ref: '#/components/responses/Valid'
+        401:
+          $ref: '#/components/responses/UnauthorizedError'
+
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                identifier:
+                  type: string
+                  example: 'Google'
+                password:
+                  type: string
+                  example: 'mypassword'
       
       security:
         - bearer_auth: []

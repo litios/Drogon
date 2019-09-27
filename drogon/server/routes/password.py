@@ -13,24 +13,30 @@ from flask.views import MethodView
 from pathlib import Path
 from pymongo import MongoClient
 
+    
+
 class PasswordsView(MethodView):
     db_path = '../../drogon/{username}.dr'
     db_client = MongoClient('mongodb://localhost:27017/drogon')
     
-    def get(self, user):
-        manager = Manager(self.db_path.format(username = user['username']), user['passwd'].encode(), str(user['salt']).encode())
+    def get_manager(self, user):
+        value = int(len(user['passwd']) / 2)
 
-        return manager.list_passwd()
+        return Manager(self.db_path.format(username = user['username']), user['passwd'][:value].encode(), user['passwd'][value:].encode())
 
     def post(self, user):
-        manager = Manager(self.db_path.format(username = user['username']), user['passwd'].encode(), str(user['salt']).encode())
-
-        return manager.list_passwd().items()
+        user_data = request.json
+        manager = self.get_manager(user)
+        return manager.get_passwd(user_data['identifier'])
 
 
     def put(self, user):
-        pass
+        user_data = request.json
+        manager = self.get_manager(user)
+        manager.store_passwd(user_data['identifier'], user_data['password'])
+        
+        return user_data['identifier'] 
 
-    def search(self, limit=100):
-      # NOTE: we need to wrap it with list for Python 3 as dict_values is not JSON serializable
-      return []
+    def search(self, user):
+        manager = self.get_manager(user)
+        return [identifier for identifier in manager.list_passwd()]
